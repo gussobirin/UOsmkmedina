@@ -1,0 +1,356 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medina CBT - SMK Medina Bandung</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+header {
+    background: #123c69;
+    color: white;
+    text-align: center;
+    padding: 24px 15px;
+}
+
+header h1 {
+    margin: 0 0 8px;
+}
+
+header p {
+    margin: 0;
+}
+
+.container {
+    max-width: 750px;
+    margin: 25px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 3px 15px #00000012;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 16px;
+}
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+.info {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    background: #eff6ff;
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.question {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 15px 0;
+}
+
+.question p {
+    font-weight: bold;
+    line-height: 1.5;
+}
+
+.option {
+    display: block;
+    padding: 11px;
+    margin: 7px 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.option:hover {
+    background: #eff6ff;
+}
+
+.option input {
+    width: auto;
+    margin: 0 8px 0 0;
+}
+
+.result {
+    text-align: center;
+}
+
+.score {
+    font-size: 55px;
+    font-weight: bold;
+    color: #16a34a;
+}
+
+.hidden {
+    display: none;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+    font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>MEDINA CBT</h1>
+    <p>Computer Based Test</p>
+    <p>SMK Medina Bandung</p>
+</header>
+
+<!-- HALAMAN LOGIN -->
+<div class="container" id="loginPage">
+    <h2>Identitas Peserta Ujian</h2>
+
+    <label>Nama Lengkap</label>
+    <input type="text" id="nama" placeholder="Masukkan nama lengkap">
+
+    <label>Kelas</label>
+    <select id="kelas">
+        <option value="">Pilih kelas</option>
+        <option>X TJKT</option>
+        <option>XI TJKT</option>
+        <option>XII TJKT</option>
+    </select>
+
+    <button onclick="mulaiUjian()">Mulai Ujian</button>
+</div>
+
+<!-- HALAMAN UJIAN -->
+<div class="container hidden" id="examPage">
+
+    <div class="info">
+        <span id="peserta"></span>
+        <span>Waktu: <span id="timer">10:00</span></span>
+    </div>
+
+    <h2>Ujian Informatika</h2>
+    <p>Pilih satu jawaban yang paling tepat.</p>
+
+    <div id="soal"></div>
+
+    <button id="submitBtn" onclick="selesaiUjian()">
+        Selesai dan Kirim Jawaban
+    </button>
+</div>
+
+<!-- HALAMAN HASIL -->
+<div class="container hidden result" id="resultPage">
+    <h2>Ujian Selesai!</h2>
+    <p id="hasilNama"></p>
+
+    <div class="score" id="nilai">0</div>
+    <p>Nilai Ujian</p>
+
+    <p id="keterangan"></p>
+
+    <button onclick="location.reload()">Kembali ke Awal</button>
+</div>
+
+<footer>
+    &copy; 2026 Medina CBT - SMK Medina Bandung
+</footer>
+
+<script>
+const daftarSoal = [
+    {
+        tanya: "Apa kepanjangan dari CPU?",
+        pilihan: [
+            "Central Processing Unit",
+            "Computer Personal Unit",
+            "Central Program Utility",
+            "Control Processing User"
+        ],
+        benar: 0
+    },
+    {
+        tanya: "Sistem bilangan biner menggunakan basis berapa?",
+        pilihan: ["2", "8", "10", "16"],
+        benar: 0
+    },
+    {
+        tanya: "Perangkat yang berfungsi menghubungkan beberapa jaringan adalah?",
+        pilihan: ["Keyboard", "Router", "Monitor", "Printer"],
+        benar: 1
+    },
+    {
+        tanya: "Manakah berikut ini yang termasuk perangkat input?",
+        pilihan: ["Monitor", "Speaker", "Keyboard", "Proyektor"],
+        benar: 2
+    },
+    {
+        tanya: "Kepanjangan dari LAN adalah?",
+        pilihan: [
+            "Large Access Network",
+            "Local Area Network",
+            "Long Area Node",
+            "Local Access Number"
+        ],
+        benar: 1
+    }
+];
+
+let namaPeserta = "";
+let kelasPeserta = "";
+let waktu = 600;
+let intervalTimer;
+
+function mulaiUjian() {
+    namaPeserta = document.getElementById("nama").value.trim();
+    kelasPeserta = document.getElementById("kelas").value;
+
+    if (!namaPeserta || !kelasPeserta) {
+        alert("Silakan isi nama dan kelas terlebih dahulu!");
+        return;
+    }
+
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("examPage").classList.remove("hidden");
+
+    document.getElementById("peserta").textContent =
+        namaPeserta + " - " + kelasPeserta;
+
+    tampilkanSoal();
+    mulaiTimer();
+}
+
+function tampilkanSoal() {
+    const area = document.getElementById("soal");
+    area.innerHTML = "";
+
+    daftarSoal.forEach((soal, index) => {
+        let html = `
+            <div class="question">
+                <p>${index + 1}. ${soal.tanya}</p>
+        `;
+
+        soal.pilihan.forEach((pilihan, i) => {
+            html += `
+                <label class="option">
+                    <input type="radio"
+                        name="soal${index}"
+                        value="${i}">
+                    ${String.fromCharCode(65 + i)}. ${pilihan}
+                </label>
+            `;
+        });
+
+        html += "</div>";
+        area.innerHTML += html;
+    });
+}
+
+function mulaiTimer() {
+    intervalTimer = setInterval(function() {
+        waktu--;
+
+        let menit = Math.floor(waktu / 60);
+        let detik = waktu % 60;
+
+        document.getElementById("timer").textContent =
+            String(menit).padStart(2, "0") + ":" +
+            String(detik).padStart(2, "0");
+
+        if (waktu <= 0) {
+            selesaiUjian();
+        }
+    }, 1000);
+}
+
+function selesaiUjian() {
+    clearInterval(intervalTimer);
+
+    let benar = 0;
+
+    daftarSoal.forEach((soal, index) => {
+        const jawaban = document.querySelector(
+            'input[name="soal' + index + '"]:checked'
+        );
+
+        if (jawaban && Number(jawaban.value) === soal.benar) {
+            benar++;
+        }
+    });
+
+    const nilai = Math.round(
+        (benar / daftarSoal.length) * 100
+    );
+
+    const hasil = {
+        nama: namaPeserta,
+        kelas: kelasPeserta,
+        benar: benar,
+        total: daftarSoal.length,
+        nilai: nilai,
+        tanggal: new Date().toLocaleString("id-ID")
+    };
+
+    const riwayat = JSON.parse(
+        localStorage.getItem("medinaCBTHasil") || "[]"
+    );
+
+    riwayat.push(hasil);
+
+    localStorage.setItem(
+        "medinaCBTHasil",
+        JSON.stringify(riwayat)
+    );
+
+    document.getElementById("examPage").classList.add("hidden");
+    document.getElementById("resultPage").classList.remove("hidden");
+
+    document.getElementById("hasilNama").textContent =
+        namaPeserta + " - " + kelasPeserta;
+
+    document.getElementById("nilai").textContent = nilai;
+
+    document.getElementById("keterangan").textContent =
+        "Jawaban benar: " + benar + " dari " +
+        daftarSoal.length + " soal.";
+}
+</script>
+
+</body>
+</html>
